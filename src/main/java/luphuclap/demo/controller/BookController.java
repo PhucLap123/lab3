@@ -1,16 +1,16 @@
 package luphuclap.demo.controller;
 
+import jakarta.validation.Valid;
 import luphuclap.demo.entity.Book;
 import luphuclap.demo.services.BookService;
 import luphuclap.demo.services.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.*;
 
+import javax.naming.Binding;
 import java.util.List;
 
 @Controller
@@ -40,10 +40,47 @@ public class BookController{
 
 
     @PostMapping("/add")
-    public String addBook(@ModelAttribute("book") Book book){
+    public String addBook(@Valid @ModelAttribute("book") Book book , BindingResult bindingResult ,Model model){
+        if(bindingResult.hasErrors())
+        {
+            model.addAttribute("categories",categoryService.getAllCategories());
+            return "book/add";
+        }
         bookService.addBook(book);
         return "redirect:/books";
     }
+    @GetMapping("/edit/{id}")
+    public String editBookForm(@PathVariable("id") long id, Model model){
+        Book editBook = bookService.getBookById(id);
+        if(editBook != null){
+            model.addAttribute("book", editBook);
+            model.addAttribute("categories", categoryService.getAllCategories());
+            return "book/edit";
+        }else {
+            return "not-found";
+        }
+    }
+    @PostMapping("/edit")
+    public String editBook(@Valid @ModelAttribute("book")Book updateBook, BindingResult bindingResult, Model model ){
+        if (bindingResult.hasErrors()){
+            model.addAttribute("categories", categoryService.getAllCategories());
+            return "book/edit";
+        }
+        bookService.getAllBooks().stream()
+                .filter(book -> book.getId() == updateBook.getId())
+                .findFirst()
+                .ifPresent(book -> {
+
+                    bookService.updateBook(updateBook);
+                });
+        return "redirect:/books";
+    }
+    @PostMapping("/delete/{id}")
+    public String deleteBook(@PathVariable("id") long id){
+        bookService.deleteBook(id);
+        return "redirect:/books";
+    }
+
 
 
 
